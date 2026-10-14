@@ -1,6 +1,6 @@
 # Code-Agent
 
-一款可以调用本地 AI 模型的编程助手，通过工程化、智能化集成方案，推动前端项目在架构、性能、安全、体验、效率、质量全面提升。
+一款命令行工具，可以调用本地AI模型的编程助手，通过工程化、智能化集成方案，推动前端项目在架构、性能、安全、体验、效率、质量全面提升。
 
 # 🛠 技术栈
 
@@ -21,10 +21,28 @@
 5. install: 自动拉取或安装所需依赖库。
 6. end: 执行收尾工作并输出成功或错误日志。
 
+# 📁 目录结构概览
+
+```text
+code-agent/
+├── src/
+│ ├── bin/ # code-agent执行命令的入口文件
+│ ├── cli-core/ # code-agent命令的核心生命周期、基类及状态管理
+│ ├── cli-api/ # code-agent底层工具封装（文件系统、git处理、子进程任务等）
+│ ├── config/ # 命令及全局配置文件
+│ ├── extensions/ # 实际业务命令（通过coda cmd create来生成命令模板并实现具体业务）
+│ ├── generator/ # 命令模板管理器（如 cmd-create生成新的命令模板, cmd-delete删除命令模板）
+│ ├── service/ # 公共服务（语言包、工具函数等）
+│ └── types/ # 公用的类型接口定义文件
+├── tsconfig.json # TypeScript 配置文件
+├── tsc-alias.json # 路径别名重写配置
+└── package.json # 项目配置与依赖管理
+```
+
 # 🚀 快速开始与开发指南
 
 1. 安装依赖
-   确保已安装 Node.js（推荐 18+ 或最新 LTS 版本），然后安装项目依赖：
+   确保已安装 Node.js（推荐 22+ 或最新 LTS 版本），然后安装项目依赖：
 
 ```
 Bash
@@ -44,7 +62,7 @@ npm install
 
 # 🐞 VS Code 调试配置
 
-打开package.json，找到scripts中需要调试的命令，鼠标移动到指令上会弹出“运行脚本|调试脚本”，点击调试脚本即可。注意报错后需要在对应的.ts文件中加入debugger进行断点调试。
+点击vscode左侧栏“运行和调试”按钮，选中需要调试的命令再点运行即可。
 
 # 📜 可用脚本命令
 
@@ -54,23 +72,5 @@ npm install
 | `npm run link`             | 构建并注册全局 coda 命令               |
 | `npm run debug_cmd-create` | 调试创建自定义命令流程                 |
 | `npm run debug_cmd-delete` | 调试删除自定义命令流程                 |
-
-# 📁 目录结构概览
-
-```text
-code-agent/
-├── src/
-│ ├── bin/ # code-agent执行命令的入口文件
-│ ├── cli-core/ # code-agent命令的核心生命周期、基类及状态管理
-│ ├── cli-api/ # code-agent底层工具封装（文件系统、git处理、子进程任务等）
-│ ├── config/ # 命令及全局配置文件
-│ ├── extensions/ # 实际业务命令（通过coda cmd create来生成命令模板并实现具体业务）
-│ ├── generator/ # 命令模板管理器（如 cmd-create生成新的命令模板, cmd-delete删除命令模板）
-│ ├── service/ # 公共服务（语言包、工具函数等）
-│ └── types/ # 公用的类型接口定义文件
-├── tsconfig.json # TypeScript 配置文件
-├── tsc-alias.json # 路径别名重写配置
-└── package.json # 项目配置与依赖管理
-```
 
 📄**License**: [ISC](LICENSE)

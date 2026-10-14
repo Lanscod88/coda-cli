@@ -9,8 +9,18 @@ import {CLIConfigType, CommandItem, LikeCommandResult} from '@/types';
 const CLIConfig: CLIConfigType = CLIConfigData as CLIConfigType;
 
 CLI.loading.start(Lang.BUILDIN.CORE_STRTUP_READY);
-let npmRootPath = ChildProcess.syncCmdExecuteResult('npm root -g');
-let cliRoootPath = path.join(npmRootPath, CLIConfig.packageName);
+
+// 判断是否为 VS Code 本地调试环境
+const isDebug = process.env.DEBUG_ENV === 'true';
+const globalNpmRoot = ChildProcess.syncCmdExecuteResult('npm root -g');
+
+// 如果是本地调试，根目录指向当前项目根目录；否则指向全局包目录
+let currentProjectRoot = isDebug
+  ? path.resolve(__dirname, '../../') // 从 src/bin 往上两级到达项目根目录
+  : path.join(globalNpmRoot, CLIConfig.packageName);
+
+let npmRootPath = isDebug ? currentProjectRoot : globalNpmRoot;
+let cliRoootPath = currentProjectRoot;
 
 /**
  * 获取 CLI 配置对象
@@ -179,15 +189,20 @@ async function guideCommand(): Promise<void> {
       CLI.loading.succeed(Lang.BUILDIN.CLI_VOLIDATE_CMD_SUCCESS);
 
       const loadProgram = (): void => {
-        let programPath = path.join(npmRootPath, CLIConfig.packageName, 'src', main); //TS编译后的JS命令实际路径
+        let programPath = isDebug
+          ? path.join(currentProjectRoot, 'src', main)
+          : path.join(globalNpmRoot, CLIConfig.packageName, 'src', main);
+
         let child = fork(programPath, [npmRootPath], {
           silent: false,
         });
+
         child.on('error', (error: Error) => {
           console.clear();
           CLI.log.error(error.message, error.stack);
           autoUpdate();
         });
+
         child.on('exit', (code: number | null) => {
           if (code === 0) {
             autoUpdate();

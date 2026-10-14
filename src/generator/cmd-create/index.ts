@@ -68,24 +68,6 @@ const methods = {
     API.fs.copyFile(baseIndexTmpl, cmdIndexPath);
     CLI.loading.succeed(Lang.BUILDIN.ADD_CMD_EXTENSIONS_SUCCESS);
   },
-
-  /**
-   * 添加到 package.json 的 scripts 中
-   */
-  addToPkgBin(folderName: string): void {
-    const temp = folderName.split('-');
-    const cmd = `${CLIConfig.name} ${temp.join(' ')}`;
-    CLI.loading.start(Lang.BUILDIN.ADD_CMD_PACKAGE);
-    const pkg = API.fs.join(npmRootPath, CLIConfig.packageName, 'package.json');
-    const pkgJson = API.fs.readFile(pkg, true);
-
-    if (pkgJson.scripts) {
-      pkgJson.scripts[`debug_${folderName}`] = `cross-env DEBUG_ENV=true ${cmd}`;
-    }
-
-    API.fs.writeFile(pkg, pkgJson, true);
-    CLI.loading.succeed(Lang.BUILDIN.ADD_CMD_PACKAGE_SUCCESS);
-  },
 };
 
 Base.extends({
@@ -168,7 +150,6 @@ Base.extends({
       Base.state.isStartUserRootData ?? Base.state.isStartUserRootPath,
     );
     methods.addToExtensions(Base.state.folderName);
-    methods.addToPkgBin(Base.state.folderName);
     Wait.next();
   },
 
