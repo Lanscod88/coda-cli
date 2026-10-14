@@ -1,7 +1,7 @@
 {
   "name": "coda-cli",
   "version": "1.0.2",
-  "description": "一款命令行工具，可以调用本地AI模型的编程助手，通过工程化、智能化集成方案，推动前端项目在架构、性能、安全、体验、效率、质量全面提升。",
+  "description": "Coda-CLI是一款命令行代码辅助开发工具",
   "scripts": {
     "build": "tsc && tsc-alias --dir src",
     "link": "npm run build && npm link"
