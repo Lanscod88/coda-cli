@@ -1,0 +1,44 @@
+{
+  "name": "code-agent",
+  "version": "0.0.1",
+  "description": "一款可以调用本地AI模型的编程助手，通过工程化、智能化集成方案，推动前端项目在架构、性能、安全、体验、效率、质量全面提升。",
+  "scripts": {
+    "build": "tsc && tsc-alias --dir src",
+    "prepublishOnly": "npm run build",
+    "link": "npm run build && npm link",
+    "debug_cmd-create": "cross-env DEBUG_ENV=true coda cmd create",
+    "debug_cmd-delete": "cross-env DEBUG_ENV=true coda cmd delete"
+  },
+  "keywords": [
+    "cli",
+    "tools"
+  ],
+  "author": "Lanscod",
+  "license": "ISC",
+  "bin": {
+    "coda": "./src/bin/index.js"
+  },
+  "files": [
+    "src"
+  ],
+  "dependencies": {
+    "axios": "^1.7.3",
+    "chalk": "^6.0.1",
+    "del": "^9.0.1",
+    "fs-extra": "^11.4.1",
+    "@types/fs-extra": "^11.0.4",
+    "glob": "^13.0.6",
+    "npm-check-updates": "^23.1.1",
+    "ora": "^9.4.1",
+    "semver": "^7.8.5",
+    "@types/semver": "^7.8.0",
+    "inquirer": "^14.2.3",
+    "@types/inquirer": "^9.0.10"
+  },
+  "devDependencies": {
+    "@types/node": "^26.6.5",
+    "cross-env": "^7.0.3",
+    "typescript": "^7.0.2",
+    "tsc-alias": "^1.9.7"
+  }
+}

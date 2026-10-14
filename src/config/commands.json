@@ -1,0 +1,20 @@
+{
+  "wordsLen": 2,
+  "packageName": "code-agent",
+  "name": "coda",
+  "commands": [
+    {
+      "command": "cmd create",
+      "description": "code-agent增加命令",
+      "custom": false
+    },
+    {
+      "command": "cmd delete",
+      "description": "删除命令",
+      "custom": false
+    }
+  ],
+  "inAnyPath": ["cmd create", "cmd delete", "add project"],
+  "buildIn": ["cmd create", "cmd delete"],
+  "store": "https://registry.npmjs.org"
+}
