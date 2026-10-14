@@ -1,6 +1,6 @@
 {
   "name": "coda-cli",
-  "version": "1.0.2",
+  "version": "1.0.3",
   "description": "Coda-CLI是一款命令行代码辅助开发工具",
   "scripts": {
     "build": "tsc && tsc-alias --dir src",
