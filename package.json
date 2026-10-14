@@ -6,12 +6,16 @@
     "build": "tsc && tsc-alias --dir src",
     "link": "npm run build && npm link"
   },
+  "license": "MIT",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/Lanscod88/code-agent.git"
+  },
   "keywords": [
     "command line tools",
     "AI agent"
   ],
   "author": "Lanscod",
-  "license": "ISC",
   "bin": {
     "coda": "./src/bin/index.js"
   },
