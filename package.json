@@ -4,14 +4,13 @@
   "description": "一款可以调用本地AI模型的编程助手，通过工程化、智能化集成方案，推动前端项目在架构、性能、安全、体验、效率、质量全面提升。",
   "scripts": {
     "build": "tsc && tsc-alias --dir src",
-    "prepublishOnly": "npm run build",
     "link": "npm run build && npm link",
     "debug_cmd-create": "cross-env DEBUG_ENV=true coda cmd create",
     "debug_cmd-delete": "cross-env DEBUG_ENV=true coda cmd delete"
   },
   "keywords": [
-    "cli",
-    "tools"
+    "command line tools",
+    "AI agent"
   ],
   "author": "Lanscod",
   "license": "ISC",
