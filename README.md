@@ -24,11 +24,10 @@
 # 📁 目录结构概览
 
 ```text
-code-agent/
 ├── src/
-│ ├── bin/ # code-agent执行命令的入口文件
-│ ├── cli-core/ # code-agent命令的核心生命周期、基类及状态管理
-│ ├── cli-api/ # code-agent底层工具封装（文件系统、git处理、子进程任务等）
+│ ├── bin/ # Coda-CLI执行命令的入口文件
+│ ├── cli-core/ # Coda-CLI命令的核心生命周期、基类及状态管理
+│ ├── cli-api/ # Coda-CLI底层工具封装（文件系统、git处理、子进程任务等）
 │ ├── config/ # 命令及全局配置文件
 │ ├── extensions/ # 实际业务命令（通过coda cmd create来生成命令模板并实现具体业务）
 │ ├── generator/ # 命令模板管理器（如 cmd-create生成新的命令模板, cmd-delete删除命令模板）
@@ -48,27 +47,27 @@ code-agent/
 npm install
 ```
 
-2. 构建与本地链接本项目支持 TypeScript 源码同级编译（src/ 到 src/），并配置了路径别名映射：
+2. 构建与本地链接本项目支持：
 
 ```bash
 # 编译 TypeScript 并重写路径别名
   npm run build
 
-# 将 CLI 工具链接到全局以便本地联调 (coda 命令)
+# 将 Coda-CLI链接到全局以便本地联调
   npm run link
 ```
 
-# 🐞 VS Code 调试配置
+# 🐞 VSCode 调试配置
 
-点击vscode左侧栏“运行和调试”按钮，选中需要调试的命令再点运行即可。
+调试前先运行"npm run link",再点击vscode左侧栏“运行和调试”按钮，选中需要调试的命令再点运行即可。
 
-# 📜 可用脚本命令
+注意：新增业务命令后需要在.vscode/launch.json中添加调试配置项才可调试新增的命令
 
-| 命令                       | 描述                                   |
-| :------------------------- | :------------------------------------- |
-| `npm run build`            | 编译 TypeScript 文件并自动转换路径别名 |
-| `npm run link`             | 构建并注册全局 coda 命令               |
-| `npm run debug_cmd-create` | 调试创建自定义命令流程                 |
-| `npm run debug_cmd-delete` | 调试删除自定义命令流程                 |
+# 📜 可用命令
+
+| 命令              | 描述                             |
+| :---------------- | :------------------------------- |
+| `coda cmd create` | 使用Coda-CLI创建实际业务命令模板 |
+| `coda cmd delete` | 使用Coda-CLI删除实际业务命令模板 |
 
 📄**License**: [MIT](LICENSE)

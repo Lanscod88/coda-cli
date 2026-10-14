@@ -1,6 +1,6 @@
 {
   "name": "coda-cli",
-  "version": "1.0.1",
+  "version": "1.0.2",
   "description": "一款命令行工具，可以调用本地AI模型的编程助手，通过工程化、智能化集成方案，推动前端项目在架构、性能、安全、体验、效率、质量全面提升。",
   "scripts": {
     "build": "tsc && tsc-alias --dir src",
@@ -9,7 +9,7 @@
   "license": "MIT",
   "repository": {
     "type": "git",
-    "url": "https://github.com/Lanscod88/code-agent.git"
+    "url": "https://github.com/Lanscod88/coda-cli.git"
   },
   "keywords": [
     "command line tools",
