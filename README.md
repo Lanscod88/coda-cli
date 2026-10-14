@@ -1,4 +1,4 @@
-# Code-Agent
+# Coda-CLI
 
 一款命令行工具，可以调用本地AI模型的编程助手，通过工程化、智能化集成方案，推动前端项目在架构、性能、安全、体验、效率、质量全面提升。
 
@@ -44,15 +44,13 @@ code-agent/
 1. 安装依赖
    确保已安装 Node.js（推荐 22+ 或最新 LTS 版本），然后安装项目依赖：
 
-```
-Bash
+```bash
 npm install
 ```
 
 2. 构建与本地链接本项目支持 TypeScript 源码同级编译（src/ 到 src/），并配置了路径别名映射：
 
-```
- Bash
+```bash
 # 编译 TypeScript 并重写路径别名
   npm run build
 
@@ -73,4 +71,4 @@ npm install
 | `npm run debug_cmd-create` | 调试创建自定义命令流程                 |
 | `npm run debug_cmd-delete` | 调试删除自定义命令流程                 |
 
-📄**License**: [ISC](LICENSE)
+📄**License**: [MIT](LICENSE)
