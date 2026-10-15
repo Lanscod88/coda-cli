@@ -2,24 +2,10 @@ import {Base, Wait, CLI, ChildProcess} from '@/cli-core';
 import {request} from '@/cli-api';
 import {AIClient, FileMCPExecutor, ToolRegistry, AgentExecutor} from '@/agent-api';
 import {Answers, Quessions} from '@/cli-core/cli';
+import {AISettings} from '@/agent-api/types';
 
 /**
- * 核心 AI 设置接口（与 VS Code 插件保持完全一致的配置规范）
- */
-export interface AISettings {
-  protocol: 'ollama' | 'openai'; // 模型服务协议
-  baseUrl: string; // 服务地址
-  apiKey?: string; // API密钥
-  model: string; // 模型名称（或多模型模式下的代码实现模型）
-  options: {
-    contextSize?: number; // 上下文大小
-    architectureModel?: string; // 架构设计模型（多模型协作专用）
-    [key: string]: any;
-  };
-}
-
-/**
- * 命令行 Agent 运行时的完整状态接口（扩展自 AISettings）
+ * Coda-CLI运行时的完整状态接口
  */
 interface AgentState extends AISettings {
   modelList: string[]; // 可选模型列表
@@ -317,16 +303,6 @@ Base.extends({
     }
 
     CLI.log.debug('run step 3: default done');
-    Wait.next();
-  },
-
-  async writing(): Promise<void> {
-    CLI.log.debug('run step 4: writing done');
-    Wait.next();
-  },
-
-  async install(): Promise<void> {
-    CLI.log.debug('run step 5: install done');
     Wait.next();
   },
 
