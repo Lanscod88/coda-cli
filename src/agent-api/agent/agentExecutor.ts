@@ -50,9 +50,18 @@ export class AgentExecutor {
               const candidate = text.substring(start, i + 1);
               try {
                 const parsed = JSON.parse(candidate);
+
                 // 兼容带 name 或 tool 字段的工具调用结构
                 if (parsed && (parsed.name || parsed.tool)) {
-                  if (!parsed.name && parsed.tool) parsed.name = parsed.tool;
+                  if (!parsed.name && parsed.tool) {
+                    parsed.name = parsed.tool;
+                  }
+
+                  // 核心优化：全兼容 params / args / parameters，统一归一化到 arguments
+                  const rawArgs =
+                    parsed.arguments || parsed.args || parsed.params || parsed.parameters || {};
+                  parsed.arguments = rawArgs;
+
                   return JSON.stringify(parsed);
                 }
               } catch (e) {}
@@ -82,13 +91,17 @@ export class AgentExecutor {
     // 1. 初始化对话历史
     const messages: ChatMessage[] = [];
 
-    // 如果有系统提示词，先加入。同时把注册的工具定义动态拼接进 System Prompt 中让模型知晓
+    // 动态拼接工具定义到 System Prompt 中
     const toolDefs = this.toolRegistry.getDefinitions();
     const toolsDesc = toolDefs
       .map(t => `- ${t.name}: ${t.description} (参数: ${JSON.stringify(t.parameters)})`)
       .join('\n');
 
-    const fullSystemPrompt = `${systemPrompt || '你是一个专业的 AI 编程助手，可以通过 JSON 调用工具完成任务。'}\n\n可用工具列表：\n${toolsDesc}\n\n当需要调用工具时，请输出标准的 JSON 块。`;
+    const fullSystemPrompt =
+      `${systemPrompt || '你是一个专业的 AI 编程助手，可以通过 JSON 调用工具完成任务。'}\n\n` +
+      `可用工具列表：\n${toolsDesc}\n\n` +
+      `【重要格式规范】：当需要调用工具时，请输出标准的 JSON 块。参数可以放在 "arguments"、"params" 或 "args" 字段中，例如：\n` +
+      `\`\`\`json\n{\n  "tool": "write_file",\n  "params": {\n    "path": "test.ts",\n    "content": "..."\n  }\n}\n\`\`\``;
 
     messages.push({role: 'system', content: fullSystemPrompt});
     messages.push({role: 'user', content: userPrompt});
@@ -117,13 +130,16 @@ export class AgentExecutor {
 
       try {
         const toolCall = JSON.parse(toolJsonStr);
-        const toolName = toolCall.name;
-        const toolArgs = toolCall.arguments || toolCall.args || {};
+        const toolName = toolCall.name || toolCall.tool;
+
+        // 双重保险：再次兼容读取 arguments / params / args / parameters
+        const toolArgs =
+          toolCall.arguments || toolCall.args || toolCall.params || toolCall.parameters || {};
 
         if (onToolCall) {
           onToolCall(toolName, toolArgs);
         } else if (onChunk) {
-          onChunk(`\n\n⚙️ **正在执行工具 [${toolName}]**...\n`);
+          onChunk(`\n\n⚙️ **正在执行工具 [${toolName}]** (参数: ${JSON.stringify(toolArgs)})...\n`);
         }
 
         // 4. 执行工具

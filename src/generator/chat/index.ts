@@ -4,23 +4,52 @@ import {AIClient, FileMCPExecutor, ToolRegistry, AgentExecutor} from '@/agent-ap
 import {Answers, Quessions} from '@/cli-core/cli';
 
 /**
- * 封装通用的模型服务连通性校验函数
- * @param baseUrl 服务地址
- * @param exitOnFail 如果连接失败是否直接退出进程
+ * 核心 AI 设置接口（与 VS Code 插件保持完全一致的配置规范）
  */
-async function verifyService(baseUrl: string, exitOnFail: boolean = false): Promise<boolean> {
+export interface AISettings {
+  protocol: 'ollama' | 'openai'; // 模型服务协议
+  baseUrl: string; // 服务地址
+  apiKey?: string; // API密钥
+  model: string; // 模型名称（或多模型模式下的代码实现模型）
+  options: {
+    contextSize?: number; // 上下文大小
+    architectureModel?: string; // 架构设计模型（多模型协作专用）
+    [key: string]: any;
+  };
+}
+
+/**
+ * 命令行 Agent 运行时的完整状态接口（扩展自 AISettings）
+ */
+interface AgentState extends AISettings {
+  modelList: string[]; // 可选模型列表
+  enableMultiModel: boolean; // 是否启用多模型协作
+  architectureModel: string; // 架构设计模型
+  implementationModel: string; // 代码实现模型
+  taskMode: 'coding' | 'review'; // 单模型工作模式
+  userPrompt: string; // 用户任务需求
+  success: boolean; // 执行成功标识
+  [key: string]: any;
+}
+
+/**
+ * 通用模型服务连通性校验函数
+ */
+async function verifyService(baseUrl: string, protocol: string, apiKey?: string): Promise<boolean> {
   try {
-    const response: any = await request.ajax(baseUrl, 'get');
+    const headers: Record<string, string> = {};
+    if (apiKey && protocol !== 'ollama') {
+      headers['Authorization'] = `Bearer ${apiKey}`;
+    }
+
+    const testUrl = protocol === 'ollama' ? `${baseUrl}/api/tags` : `${baseUrl}/models`;
+    const response: any = await request.ajax(testUrl, 'get', {headers});
+
     if (response && response.status !== 'error') {
       return true;
     }
   } catch (e: any) {
     // 捕获网络异常
-  }
-
-  if (exitOnFail) {
-    CLI.log.error('本地大模型服务没有启动或无法连接');
-    process.exit();
   }
   return false;
 }
@@ -28,49 +57,59 @@ async function verifyService(baseUrl: string, exitOnFail: boolean = false): Prom
 Base.extends({
   async init(): Promise<void> {
     Base.state = {
-      modelList: [], // 模型名称列表
-      model: 'qwen3-coder:30b', // 默认模型
-      baseUrl: 'http://127.0.0.1:11434', // 默认 Ollama 地址
-      contextSize: 32768, // 默认上下文 Token 大小
-      protocol: 'ollama' as const,
+      protocol: 'ollama',
+      baseUrl: 'http://127.0.0.1:11434',
+      apiKey: '',
+      model: 'qwen3-coder:30b',
+      options: {
+        contextSize: 32768,
+      },
+      modelList: [],
+      enableMultiModel: false,
+      architectureModel: 'deepseek-r1:32b',
+      implementationModel: 'qwen3-coder:30b',
+      taskMode: 'coding',
       userPrompt: '',
       success: false,
-    };
-
-    // 使用封装的函数进行初始化校验，不通则直接退出
-    await verifyService(Base.state.baseUrl, true);
-
-    // 获取本地模型列表逻辑
-    try {
-      const tagsRes: any = await request.ajax(`${Base.state.baseUrl}/api/tags`, 'get');
-      if (tagsRes && tagsRes.data && tagsRes.data.models) {
-        Base.state.modelList = tagsRes.data.models.map((m: any) => m.name);
-      } else if (tagsRes && tagsRes.models) {
-        Base.state.modelList = tagsRes.models.map((m: any) => m.name);
-      } else if (Array.isArray(tagsRes)) {
-        Base.state.modelList = tagsRes.map((m: any) => m.name || m);
-      }
-    } catch (e: any) {
-      CLI.log.warn(`获取模型列表失败: ${e.message}`);
-    }
-
-    // 如果未获取到模型，提供默认兜底选项
-    if (!Base.state.modelList || Base.state.modelList.length === 0) {
-      Base.state.modelList = ['qwen3-coder:30b'];
-    }
+    } as AgentState;
 
     CLI.log.debug('run step 1: init done');
     Wait.next();
   },
 
   async prompt(): Promise<void> {
-    const questions: Quessions = [
+    // ==========================================
+    // 第一步：选择服务协议 (Protocol)
+    // ==========================================
+    const protocolQuestions: Quessions = [
+      {
+        type: 'select',
+        name: 'protocol',
+        message: '请选择服务协议 (Protocol):',
+        choices: [
+          {name: 'Ollama 协议原生', value: 'ollama'},
+          {name: 'OpenAI 兼容协议', value: 'openai'},
+        ],
+        default: Base.state.protocol,
+      },
+    ];
+    const protocolAnswers: Answers = await CLI.addQuestions(protocolQuestions);
+    Base.state.protocol = protocolAnswers.protocol;
+
+    // ==========================================
+    // 第二步：设置服务地址与密钥并进行实时连通性校验
+    // ==========================================
+    const isOllama = Base.state.protocol === 'ollama';
+    if (isOllama && !Base.state.baseUrl.includes('11434')) {
+      Base.state.baseUrl = 'http://127.0.0.1:11434';
+    }
+
+    const connectionQuestions: Quessions = [
       {
         type: 'input',
         name: 'baseUrl',
-        message: '请输入本地模型服务地址 (Base URL):',
+        message: '请输入服务地址 (Base URL):',
         default: Base.state.baseUrl,
-        // 支持异步校验：先校验网址格式，再动态请求验证服务连通性
         validate: async (value: string) => {
           try {
             new URL(value);
@@ -78,27 +117,120 @@ Base.extends({
             return '❌ 格式错误：请输入合法的网址（例如：http://127.0.0.1:11434）';
           }
 
-          CLI.log.info(' 正在验证服务地址连通性...');
-          const isAlive = await verifyService(value, false);
+          CLI.log.info(' 正在验证服务连通性与鉴权状态...');
+          const isAlive = await verifyService(value, Base.state.protocol, Base.state.apiKey);
           if (!isAlive) {
-            return `❌ 连接失败：无法连接到 ${value}，请确保服务已启动且地址正确`;
+            return `❌ 连接失败：无法连接到 ${value} 或鉴权未通过，请检查服务状态。`;
           }
           return true;
         },
       },
       {
-        type: 'select',
-        name: 'model',
-        message: '请选择要调用的本地大模型 (上下键选择，回车确认):',
-        choices: Base.state.modelList,
-        default: Base.state.modelList[0] || 'qwen3-coder:30b',
+        type: 'input',
+        name: 'apiKey',
+        message: '请输入密钥 (API Key，若服务器无需鉴权可直接回车):',
+        default: Base.state.apiKey || '',
+        when: !isOllama,
       },
+    ];
+
+    const connectionAnswers: Answers = await CLI.addQuestions(connectionQuestions);
+    Base.state.baseUrl = connectionAnswers.baseUrl || Base.state.baseUrl;
+    Base.state.apiKey = connectionAnswers.apiKey || '';
+
+    // 动态拉取模型列表
+    try {
+      const tagsUrl =
+        Base.state.protocol === 'ollama'
+          ? `${Base.state.baseUrl}/api/tags`
+          : `${Base.state.baseUrl}/models`;
+      const tagsRes: any = await request.ajax(tagsUrl, 'get');
+      if (tagsRes && tagsRes.data && tagsRes.data.models) {
+        Base.state.modelList = tagsRes.data.models.map((m: any) => m.name || m.id);
+      } else if (Array.isArray(tagsRes)) {
+        Base.state.modelList = tagsRes.map((m: any) => m.name || m.id || m);
+      }
+    } catch (e: any) {
+      CLI.log.warn(`获取模型列表失败，将使用默认兜底模型: ${e.message}`);
+    }
+
+    if (!Base.state.modelList || Base.state.modelList.length === 0) {
+      Base.state.modelList = ['qwen3-coder:30b', 'deepseek-r1:32b'];
+    }
+
+    // ==========================================
+    // 第三步：选择工作模式（多模型协作 vs 单模型）
+    // ==========================================
+    const modeQuestions: Quessions = [
+      {
+        type: 'confirm',
+        name: 'enableMultiModel',
+        message: '是否启用多模型协作 (架构规划 + 代码实现)?',
+        default: false,
+      },
+    ];
+    const modeAnswers: Answers = await CLI.addQuestions(modeQuestions);
+    Base.state.enableMultiModel = modeAnswers.enableMultiModel;
+
+    // ==========================================
+    // 第四步：根据依赖关系配置具体模型或任务模式
+    // ==========================================
+    if (Base.state.enableMultiModel) {
+      const multiModelQuestions: Quessions = [
+        {
+          type: 'select',
+          name: 'architectureModel',
+          message: '请选择 1. 架构设计模型:',
+          choices: Base.state.modelList,
+          default: Base.state.modelList[1] || Base.state.modelList[0],
+        },
+        {
+          type: 'select',
+          name: 'implementationModel',
+          message: '请选择 2. 代码实现模型:',
+          choices: Base.state.modelList,
+          default: Base.state.modelList[0],
+        },
+      ];
+      const multiAnswers: Answers = await CLI.addQuestions(multiModelQuestions);
+      Base.state.architectureModel = multiAnswers.architectureModel;
+      Base.state.implementationModel = multiAnswers.implementationModel;
+      Base.state.model = multiAnswers.implementationModel;
+    } else {
+      const singleModelQuestions: Quessions = [
+        {
+          type: 'select',
+          name: 'model',
+          message: '请选择要调用的 AI 模型:',
+          choices: Base.state.modelList,
+          default: Base.state.modelList[0],
+        },
+        {
+          type: 'select',
+          name: 'taskMode',
+          message: '请选择工作模式:',
+          choices: [
+            {name: '💻 编码实现 (Coding)', value: 'coding'},
+            {name: '🔍 代码审查 (Code Review)', value: 'review'},
+          ],
+          default: 'coding',
+        },
+      ];
+      const singleAnswers: Answers = await CLI.addQuestions(singleModelQuestions);
+      Base.state.model = singleAnswers.model;
+      Base.state.taskMode = singleAnswers.taskMode;
+    }
+
+    // ==========================================
+    // 第五步：设置上下文大小与输入任务目标
+    // ==========================================
+    const currentContext = Base.state.options.contextSize || 32768;
+    const finalQuestions: Quessions = [
       {
         type: 'input',
         name: 'contextSize',
         message: '请输入上下文大小 (Context Size，整数，最大 120k):',
-        default: String(Base.state.contextSize),
-        // 校验数字、整数及最大 120k 范围 (122880)
+        default: String(currentContext),
         validate: (value: string) => {
           const num = Number(value);
           if (isNaN(num) || !Number.isInteger(num)) {
@@ -118,13 +250,12 @@ Base.extends({
       },
     ];
 
-    const answers: Answers = await CLI.addQuestions(questions);
-
-    // 通过 answers 设置全局状态值
-    Base.state.baseUrl = answers.baseUrl || Base.state.baseUrl;
-    Base.state.userPrompt = answers.userPrompt;
-    Base.state.contextSize = parseInt(answers.contextSize, 10) || 32768;
-    Base.state.model = answers.model || Base.state.modelList[0] || 'qwen3-coder:30b';
+    const finalAnswers: Answers = await CLI.addQuestions(finalQuestions);
+    Base.state.options.contextSize = parseInt(finalAnswers.contextSize, 10);
+    Base.state.options.architectureModel = Base.state.enableMultiModel
+      ? Base.state.architectureModel
+      : undefined;
+    Base.state.userPrompt = finalAnswers.userPrompt;
 
     CLI.log.debug('run step 2: prompt done');
     Wait.next();
@@ -134,35 +265,50 @@ Base.extends({
     CLI.log.info('🤖 正在初始化本地 AI Agent 运行环境...');
 
     try {
-      // 1. 初始化 AI 客户端
-      const aiClient = new AIClient({
+      const aiSettings: AISettings = {
         protocol: Base.state.protocol,
         baseUrl: Base.state.baseUrl,
+        apiKey: Base.state.apiKey,
         model: Base.state.model,
         options: {
-          contextSize: Base.state.contextSize,
+          contextSize: Base.state.options.contextSize,
+          architectureModel: Base.state.options.architectureModel,
         },
-      });
+      };
 
-      // 2. 初始化文件工具与注册中心
+      const aiClient = new AIClient(aiSettings);
       const fileExecutor = new FileMCPExecutor(() => process.cwd());
       const toolRegistry = new ToolRegistry(fileExecutor);
-
-      // 3. 初始化 Agent 执行引擎
       const agent = new AgentExecutor(aiClient, toolRegistry);
 
-      CLI.log.info(
-        `🚀 AI Agent 开始执行任务 (模型: ${Base.state.model} | 上下文: ${Base.state.contextSize})...\n`,
-      );
+      // 强化系统提示词：强制任何选中的模型识别并执行 MCP 工具调用，而不是当作纯文本输出
+      let systemPrompt =
+        '你是一个专业的命令行编程助手，可以通过 MCP 工具完成文件读写、目录查看与项目分析。\n' +
+        '【重要指令】：当你需要读取文件、修改文件、写入文件或查看目录结构时，必须严格通过工具调用（Tool Call）来执行，绝对不要仅仅在回答中打印代码或 JSON 文本。系统会自动拦截并执行你的工具请求，请等待工具返回结果后再做下一步决策。';
 
-      // 4. 运行 Agent 并流式输出
-      await agent.run(
-        Base.state.userPrompt,
-        '你是一个专业的命令行编程助手，可以通过 MCP 工具完成文件读写与项目分析。',
-        chunk => {
-          process.stdout.write(chunk);
-        },
-      );
+      if (Base.state.enableMultiModel) {
+        systemPrompt =
+          `你是一个多模型协作编程助手（架构设计模型: ${Base.state.architectureModel} 负责顶层规划，代码实现模型: ${Base.state.implementationModel} 负责具体编码）。\n` +
+          '【重要指令】：必须通过 MCP 工具来实际完成文件的读写与修改操作。';
+      } else if (Base.state.taskMode === 'review') {
+        systemPrompt =
+          '你是一个资深的代码审查专家，负责对项目代码进行安全、性能和规范性审查。\n' +
+          '【重要指令】：必须通过 MCP 工具去实际读取和检查相关文件，不能凭空猜测。';
+      }
+
+      if (Base.state.enableMultiModel) {
+        CLI.log.info(
+          `🚀 [多模型协作模式] 架构: ${Base.state.architectureModel} | 实现: ${Base.state.implementationModel} | 上下文: ${Base.state.options.contextSize}\n`,
+        );
+      } else {
+        CLI.log.info(
+          `🚀 [${Base.state.taskMode === 'review' ? '代码审查模式' : '编码实现模式'}] 模型: ${Base.state.model} | 上下文: ${Base.state.options.contextSize}\n`,
+        );
+      }
+
+      await agent.run(Base.state.userPrompt, systemPrompt, chunk => {
+        process.stdout.write(chunk);
+      });
 
       Base.state.success = true;
     } catch (error: any) {
