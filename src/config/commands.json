@@ -4,6 +4,11 @@
   "name": "coda",
   "commands": [
     {
+      "command": "chat",
+      "description": "code-agent开启本地AI对话模式",
+      "custom": false
+    },
+    {
       "command": "cmd create",
       "description": "code-agent增加命令",
       "custom": false
@@ -14,7 +19,7 @@
       "custom": false
     }
   ],
-  "inAnyPath": ["cmd create", "cmd delete", "add project"],
-  "buildIn": ["cmd create", "cmd delete"],
+  "inAnyPath": ["chat", "cmd create", "cmd delete"],
+  "buildIn": ["chat", "cmd create", "cmd delete"],
   "store": "https://registry.npmjs.org"
 }

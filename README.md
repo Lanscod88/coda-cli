@@ -26,12 +26,13 @@
 
 ```text
 ├── src/
+│ ├── agent-api/ # Coda-CLI调用AI模型的相关API
 │ ├── bin/ # Coda-CLI执行命令的入口文件
 │ ├── cli-core/ # Coda-CLI命令的核心生命周期、基类及状态管理
 │ ├── cli-api/ # Coda-CLI底层工具封装（文件系统、git处理、子进程任务等）
 │ ├── config/ # 命令及全局配置文件
 │ ├── extensions/ # 实际业务命令（通过coda cmd create来生成命令模板并实现具体业务）
-│ ├── generator/ # 命令模板管理器（如 cmd-create生成新的命令模板, cmd-delete删除命令模板）
+│ ├── generator/ # 命令模板管理器（如chat开启AI对话， cmd-create生成新的命令模板, cmd-delete删除命令模板）
 │ ├── service/ # 公共服务（语言包、工具函数等）
 │ └── types/ # 公用的类型接口定义文件
 ├── tsconfig.json # TypeScript 配置文件
@@ -68,6 +69,7 @@ npm install
 
 | 命令              | 描述                             |
 | :---------------- | :------------------------------- |
+| `coda chat`       | 使用Coda-CLI调用AI模型对话       |
 | `coda cmd create` | 使用Coda-CLI创建实际业务命令模板 |
 | `coda cmd delete` | 使用Coda-CLI删除实际业务命令模板 |
 

@@ -27,5 +27,18 @@
       "preLaunchTask": "npm: build",
       "skipFiles": ["<node_internals>/**"]
     }
+    {
+      "type": "node",
+      "request": "launch",
+      "name": "调试: 🐞 chat",
+      "program": "${workspaceFolder}/src/bin/index.js",
+      "args": ["chat"],
+      "env": {
+        "DEBUG_ENV": "true"
+      },
+      "console": "integratedTerminal",
+      "preLaunchTask": "npm: build",
+      "skipFiles": ["<node_internals>/**"]
+    }
   ]
 }

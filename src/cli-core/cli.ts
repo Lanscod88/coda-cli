@@ -1,6 +1,63 @@
 import ora from 'ora';
 import chalk from 'chalk';
-import inquirer, {Answers, PromptSession} from 'inquirer';
+import inquirer, {Answers} from 'inquirer';
+export type {Answers} from 'inquirer';
+
+// 1. inquirer官方支持的所有 Prompt 类型
+export type PromptType =
+  | 'input'
+  | 'number'
+  | 'confirm'
+  | 'select'
+  | 'rawlist'
+  | 'expand'
+  | 'checkbox'
+  | 'password'
+  | 'editor'
+  | (string & {});
+
+// 2. inquirer官方 Choices 项的结构定义（支持字符串、数字、对象或分隔符）
+export interface ChoiceObject {
+  name?: string;
+  value?: any;
+  short?: string;
+  disabled?: boolean | string;
+  [key: string]: any;
+}
+
+export type ChoiceItem = string | number | ChoiceObject | any;
+
+// 3. 基于inquirer官方文档完整规范定义的 Question 接口
+export interface Question<T extends Answers = Answers> {
+  // 核心基础字段
+  type?: PromptType;
+  name?: string;
+  message?: string | ((answers: T) => string | Promise<string>);
+  default?: any | ((answers: T) => any | Promise<any>);
+  choices?: ChoiceItem[] | ((answers: T) => ChoiceItem[] | Promise<ChoiceItem[]>);
+
+  // 校验、过滤与转换
+  validate?: (input: any, answers: T) => boolean | string | Promise<boolean | string>;
+  filter?: (input: any, answers: T) => any;
+  transformer?: (input: any, answers: T, flags: {isFinal: boolean}) => string | Promise<string>;
+  when?: boolean | ((answers: T) => boolean | Promise<boolean>);
+
+  // 样式与布局控制字段
+  pageSize?: number;
+  prefix?: string;
+  suffix?: string;
+
+  // 行为控制字段
+  askAnswered?: boolean;
+  loop?: boolean;
+  waitUserInput?: boolean;
+
+  // 兼容其他自定义扩展字段
+  [key: string]: any;
+}
+
+// 4. 兼容单个问题、数组或只读数组的复合类型（对应 PromptSession 逻辑）
+export type Quessions = Question | Question[] | readonly Question[];
 
 /**
  * CLI 交互与日志工具函数
@@ -21,8 +78,8 @@ export function cli() {
      * @param questions 使用 inquirer 配置，请参阅文档 https://www.npmjs.com/package/inquirer
      * @returns 返回 Promise 对象
      */
-    addQuestions(questions: PromptSession): Promise<Answers> {
-      return Promise.resolve(inquirer.prompt(questions));
+    async addQuestions(questions: Quessions): Promise<Answers> {
+      return await inquirer.prompt(questions as any);
     },
 
     /**

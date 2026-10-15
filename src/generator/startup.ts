@@ -135,7 +135,7 @@ async function autoUpdate(): Promise<void> {
   let pkg = path.join(cliRoootPath, 'package.json'); // 找到 CLI 自身的 PKG，真实位置在 NPM 全局安装目录下
   CLI.loading.start(Lang.BUILDIN.CORE_CHECKING_UPDATE);
 
-  let pkgJSON = require('../package.json');
+  let pkgJSON = require(pkg);
   let storeUrl = CLIConfig.store;
   let url = path.join(storeUrl, CLIConfig.packageName);
   let cliVersion = await packages.checkVersion(url, pkgJSON.version);
