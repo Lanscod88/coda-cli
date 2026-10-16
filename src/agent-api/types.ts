@@ -5,7 +5,8 @@ export interface AISettings {
   model: string; // 模型名称（或多模型模式下的代码实现模型）
   options: {
     contextSize: number; // 上下文大小
-    architectureModel?: string; // 架构设计模型（多模型协作专用）
+    architectureModel?: string; // 代码设计模型（多模型协作专用）
+    implementationModel?: string; // 代码实现模型（多模型协作专用）
     [key: string]: any;
   };
 }
