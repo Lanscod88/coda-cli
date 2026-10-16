@@ -22,6 +22,8 @@ let currentProjectRoot = isDebug
 let npmRootPath = isDebug ? currentProjectRoot : globalNpmRoot;
 let cliRoootPath = currentProjectRoot;
 
+process.env.cliRoootPath = cliRoootPath; //把工具的实际路径写入node环境变量，方便后续命令执行获取
+
 /**
  * 获取 CLI 配置对象
  */

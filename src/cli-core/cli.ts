@@ -9,6 +9,7 @@ export type PromptType =
   | 'number'
   | 'confirm'
   | 'select'
+  | 'list'
   | 'rawlist'
   | 'expand'
   | 'checkbox'

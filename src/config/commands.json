@@ -19,7 +19,24 @@
       "custom": false
     }
   ],
-  "inAnyPath": ["chat", "cmd create", "cmd delete"],
-  "buildIn": ["chat", "cmd create", "cmd delete"],
-  "store": "https://registry.npmjs.org"
+  "inAnyPath": [
+    "chat",
+    "cmd create",
+    "cmd delete"
+  ],
+  "buildIn": [
+    "chat",
+    "cmd create",
+    "cmd delete"
+  ],
+  "store": "https://registry.npmjs.org",
+  "aiSetting": {
+    "protocol": "ollama",
+    "baseUrl": "http://127.0.0.1:11434",
+    "apiKey": "",
+    "model": "gemma4:12b",
+    "options": {
+      "contextSize": 56565
+    }
+  }
 }
